@@ -1,0 +1,60 @@
+services:
+  mariadb:
+    image: mariadb:11.4.7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DOLI_DB_NAME:-dolidb}
+      MYSQL_USER: ${DOLI_DB_USER:-dolidbuser}
+      MYSQL_PASSWORD: ${DOLI_DB_PASSWORD:-dolidbpass}
+    volumes:
+      - dolibarr_db_data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+  dolibarr:
+    image: dolibarr/dolibarr:21
+    restart: unless-stopped
+    environment:
+      DOLI_INIT_DEMO: ${DOLI_INIT_DEMO:-0}
+      DOLI_DB_HOST: ${DOLI_DB_HOST:-mariadb}
+      DOLI_DB_NAME: ${DOLI_DB_NAME:-dolibarr}
+      DOLI_DB_USER: ${DOLI_DB_USER:-dolibarr}
+      DOLI_DB_PASSWORD: ${DOLI_DB_PASSWORD:-password}
+      DOLI_URL_ROOT: "${DOLI_URL_ROOT:-http://dolibarr.localhost}"
+      DOLI_ADMIN_LOGIN: "${DOLI_ADMIN_LOGIN:-admin}"
+      DOLI_ADMIN_PASSWORD: "${DOLI_ADMIN_PASSWORD:-password}"
+      DOLI_CRON: ${DOLI_CRON:-0}
+      DOLI_CRON_KEY: "${DOLI_CRON_KEY:-cron-secure-key}"
+      DOLI_COMPANY_NAME: "${DOLI_COMPANY_NAME:-company-name}"
+      WWW_USER_ID: ${WWW_USER_ID:-1000}
+      WWW_GROUP_ID: ${WWW_GROUP_ID:-1000}
+
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - dolibarr_documents:/var/www/documents
+      - dolibarr_custom:/var/www/html/custom
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+volumes:
+  dolibarr_db_data:
+  dolibarr_documents:
+  dolibarr_custom:
