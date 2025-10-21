@@ -1,6 +1,5 @@
 services:
   mariadb:
-    container_name: database
     image: mariadb:11.4.7
     restart: unless-stopped
     environment:
@@ -22,7 +21,6 @@ services:
       retries: 3
 
   dolibarr:
-    container_name: dolibarr
     image: dolibarr/dolibarr:21
     restart: unless-stopped
     environment:
