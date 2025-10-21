@@ -1,5 +1,6 @@
 services:
   mariadb:
+    container_name: database
     image: mariadb:11.4.7
     restart: unless-stopped
     environment:
@@ -8,7 +9,8 @@ services:
       MYSQL_USER: ${DOLI_DB_USER:-dolidbuser}
       MYSQL_PASSWORD: ${DOLI_DB_PASSWORD:-dolidbpass}
     volumes:
-      - dolibarr_db_data:/var/lib/mysql
+      - ./data/db:/var/lib/mysql
+      - ./data/dumps:/var/www/dumps:ro
     networks:
       - backend
     healthcheck:
@@ -20,6 +22,7 @@ services:
       retries: 3
 
   dolibarr:
+    container_name: dolibarr
     image: dolibarr/dolibarr:21
     restart: unless-stopped
     environment:
@@ -41,8 +44,8 @@ services:
       mariadb:
         condition: service_healthy
     volumes:
-      - dolibarr_documents:/var/www/documents
-      - dolibarr_custom:/var/www/html/custom
+      - ./data/documents:/var/www/documents
+      - ./data/custom:/var/www/html/custom
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost/" ]
       interval: 30s
